@@ -224,8 +224,7 @@ block_css = """.importantButton {
 webui_title = """
 """
 default_vs = vs_list[0] if len(vs_list) > 1 else "为空"
-init_message = f"""欢迎使用 langchain-ChatGLM Web UI！
-
+init_message = f"""
 请在右侧切换模式，目前支持直接与 LLM 模型对话或基于本地知识库问答。
 
 知识库问答模式，选择知识库名称后，即可开始问答，当前知识库{default_vs}，如有需要可以在选择知识库名称后上传文件/文件夹至知识库。
