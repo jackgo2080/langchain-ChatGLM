@@ -38,7 +38,7 @@ def get_answer(query, vs_path, history, mode, score_threshold=VECTOR_SEARCH_SCOR
                 query=query, vs_path=vs_path, chat_history=history, streaming=streaming):
             source = "\n\n"
             source += "".join(
-                [f"""<details> <summary>出处 [{i + 1}] {os.path.split(doc.metadata["source"])[-1]}</summary>\n"""
+                [f"""<details> <summary>参考 [{i + 1}] {os.path.split(doc.metadata["source"])[-1]}</summary>\n"""
                  f"""{doc.page_content}\n"""
                  f"""</details>"""
                  for i, doc in
