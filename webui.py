@@ -121,9 +121,21 @@ def get_vector_store(vs_id, files, sentence_size, history, one_conent, one_conte
             for file in files:
                 filename = os.path.split(file.name)[-1]
                 shutil.move(file.name, os.path.join(UPLOAD_ROOT_PATH, vs_id, filename))
+                # 判断文件 os.path.join(UPLOAD_ROOT_PATH, vs_id, filename) 是否存在
+                if os.path.exists(os.path.join(UPLOAD_ROOT_PATH, vs_id, filename)):
+                    # 如果文件不存在，设置file_status为文件在服务器不存在，请等待文件上传完毕
+                    file_status = " 在服务器不存在，请等待文件上传完毕"
+                    # 返回
+                    return "文件:"+os.path.join(UPLOAD_ROOT_PATH, vs_id, filename)+file_status
                 filelist.append(os.path.join(UPLOAD_ROOT_PATH, vs_id, filename))
             vs_path, loaded_files = local_doc_qa.init_knowledge_vector_store(filelist, vs_path, sentence_size)
         else:
+            # 判断文件 os.path.join(UPLOAD_ROOT_PATH, vs_id, filename) 是否存在
+            if os.path.exists(os.path.join(UPLOAD_ROOT_PATH, vs_id, filename)):
+                # 如果文件不存在，设置file_status为文件在服务器不存在，请等待文件上传完毕
+                file_status = " 在服务器不存在，请等待文件上传完毕"
+                # 返回
+                return "文件:"+os.path.join(UPLOAD_ROOT_PATH, vs_id, filename)+file_status
             vs_path, loaded_files = local_doc_qa.one_knowledge_add(vs_path, files, one_conent, one_content_segmentation,
                                                                    sentence_size)
         if len(loaded_files):
@@ -262,6 +274,8 @@ with gr.Blocks(css=block_css) as demo:
                                             file_types=['.txt', '.md', '.docx', '.pdf'],
                                             file_count="multiple",
                                             show_label=False)
+
+
                             load_file_button = gr.Button("上传文件并加载知识库")
                         with gr.Tab("上传文件夹"):
                             folder_files = gr.File(label="添加文件",
