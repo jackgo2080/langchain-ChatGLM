@@ -122,7 +122,7 @@ def get_vector_store(vs_id, files, sentence_size, history, one_conent, one_conte
                 filename = os.path.split(file.name)[-1]
                 shutil.move(file.name, os.path.join(UPLOAD_ROOT_PATH, vs_id, filename))
                 # 判断文件 os.path.join(UPLOAD_ROOT_PATH, vs_id, filename) 是否存在
-                if os.path.exists(os.path.join(UPLOAD_ROOT_PATH, vs_id, filename)):
+                if os.path.exists(os.path.join(UPLOAD_ROOT_PATH, vs_id, filename)) is False:
                     # 如果文件不存在，设置file_status为文件在服务器不存在，请等待文件上传完毕
                     file_status = " 在服务器不存在，请等待文件上传完毕"
                     # 返回
@@ -130,8 +130,8 @@ def get_vector_store(vs_id, files, sentence_size, history, one_conent, one_conte
                 filelist.append(os.path.join(UPLOAD_ROOT_PATH, vs_id, filename))
             vs_path, loaded_files = local_doc_qa.init_knowledge_vector_store(filelist, vs_path, sentence_size)
         else:
-            # 判断文件 os.path.join(UPLOAD_ROOT_PATH, vs_id, filename) 是否存在
-            if os.path.exists(os.path.join(UPLOAD_ROOT_PATH, vs_id, filename)):
+            # 判断文件 os.path.join(UPLOAD_ROOT_PATH, vs_id, filename) 是否不存在
+            if os.path.exists(os.path.join(UPLOAD_ROOT_PATH, vs_id, filename)) is False:
                 # 如果文件不存在，设置file_status为文件在服务器不存在，请等待文件上传完毕
                 file_status = " 在服务器不存在，请等待文件上传完毕"
                 # 返回
