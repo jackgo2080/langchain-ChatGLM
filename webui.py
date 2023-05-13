@@ -88,8 +88,7 @@ def init_model():
         logger.error(e)
         reply = """模型未成功加载，请到页面左上角"模型配置"选项卡中重新选择后点击"加载模型"按钮"""
         if str(e) == "Unknown platform: darwin":
-            logger.info("该报错可能因为您使用的是 macOS 操作系统，需先下载模型至本地后执行 Web UI，具体方法请参考项目 README 中本地部署方法及常见问题："
-                        " https://github.com/imClumsyPanda/langchain-ChatGLM")
+            logger.info("该报错可能因为您使用的是 macOS 操作系统，需先下载模型至本地后执行 Web UI")
         else:
             logger.info(reply)
         return reply
@@ -154,9 +153,7 @@ knowledge_base_test_mode_info = ("【注意】\n\n"
                                  "2. 知识相关度 Score 经测试，建议设置为 500 或更低，具体设置情况请结合实际使用调整。"
                                  """3. 使用"添加单条数据"添加文本至知识库时，内容如未分段，则内容越多越会稀释各查询内容与之关联的score阈值。\n\n"""
                                  "4. 单条内容长度建议设置在100-150左右。\n\n"
-                                 "5. 本界面用于知识入库及知识匹配相关参数设定，但当前版本中，"
-                                 "本界面中修改的参数并不会直接修改对话界面中参数，仍需前往`configs/model_config.py`修改后生效。"
-                                 "相关参数将在后续版本中支持本界面直接修改。")
+                                 "5. 本界面用于知识入库及知识匹配相关参数设定，但当前版本中，")
 
 
 def change_mode(mode, history):
@@ -206,8 +203,6 @@ block_css = """.importantButton {
 }"""
 
 webui_title = """
-# 🎉langchain-ChatGLM WebUI🎉
-👍 [https://github.com/imClumsyPanda/langchain-ChatGLM](https://github.com/imClumsyPanda/langchain-ChatGLM)
 """
 default_vs = vs_list[0] if len(vs_list) > 1 else "为空"
 init_message = f"""欢迎使用 langchain-ChatGLM Web UI！
@@ -389,32 +384,6 @@ with gr.Blocks(css=block_css) as demo:
                                  [query, vs_path, chatbot, mode, score_threshold, vector_search_top_k, chunk_conent,
                                   chunk_sizes],
                                  [chatbot, query])
-    with gr.Tab("模型配置"):
-        llm_model = gr.Radio(llm_model_dict_list,
-                             label="LLM 模型",
-                             value=LLM_MODEL,
-                             interactive=True)
-        llm_history_len = gr.Slider(0, 10,
-                                    value=LLM_HISTORY_LEN,
-                                    step=1,
-                                    label="LLM 对话轮数",
-                                    interactive=True)
-        use_ptuning_v2 = gr.Checkbox(USE_PTUNING_V2,
-                                     label="使用p-tuning-v2微调过的模型",
-                                     interactive=True)
-        use_lora = gr.Checkbox(USE_LORA,
-                               label="使用lora微调的权重",
-                               interactive=True)
-        embedding_model = gr.Radio(embedding_model_dict_list,
-                                   label="Embedding 模型",
-                                   value=EMBEDDING_MODEL,
-                                   interactive=True)
-        top_k = gr.Slider(1, 20, value=VECTOR_SEARCH_TOP_K, step=1,
-                          label="向量匹配 top k", interactive=True)
-        load_model_button = gr.Button("重新加载模型")
-        load_model_button.click(reinit_model, show_progress=True,
-                                inputs=[llm_model, embedding_model, llm_history_len, use_ptuning_v2, use_lora,
-                                        top_k, chatbot], outputs=chatbot)
 
 (demo
  .queue(concurrency_count=3)
