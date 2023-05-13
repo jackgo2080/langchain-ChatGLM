@@ -126,8 +126,7 @@ def get_vector_store(vs_id, files, sentence_size, history, one_conent, one_conte
                 if not os.path.exists(os.path.join(UPLOAD_ROOT_PATH, vs_id, filename)) or os.path.getsize(os.path.join(UPLOAD_ROOT_PATH, vs_id, filename)) <= 0:
                     print(os.path.join(UPLOAD_ROOT_PATH, vs_id, filename)+" 不存在")
                     # 如果文件不存在，设置file_status为文件在服务器不存在，请等待文件上传完毕
-                    file_status = " 请等待文件上传完毕, 再点击按钮[[加载知识库]]按钮"
-                    file_status =  "文件:"+filename+file_status
+                    file_status = "请等待文件"+filename+"上传完毕, 再点击按钮[[加载知识库]]按钮"
                     # 返回
                     return vs_path, None, history + [[None, file_status]]
                 print(os.path.join(UPLOAD_ROOT_PATH, vs_id, filename)+" 存在")
@@ -140,9 +139,7 @@ def get_vector_store(vs_id, files, sentence_size, history, one_conent, one_conte
             if os.path.exists(os.path.join(UPLOAD_ROOT_PATH, vs_id, filename)) is False or os.path.getsize(os.path.join(UPLOAD_ROOT_PATH, vs_id, filename)) <= 0:
                 print(os.path.join(UPLOAD_ROOT_PATH, vs_id, filename)+" 不存在")
                 # 如果文件不存在，设置file_status为文件在服务器不存在，请等待文件上传完毕
-                file_status = " 请等待文件上传完毕, 再点击按钮[[加载知识库]]-按钮"
-                # 返回
-                file_status =  "文件:"+filename+file_status
+                file_status = "请等待文件"+filename+"上传完毕, 再点击按钮[[加载知识库]]按钮"
                 return vs_path, None, history + [[None, file_status]]
             print(os.path.join(UPLOAD_ROOT_PATH, vs_id, filename)+" 存在")
 
