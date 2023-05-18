@@ -2,15 +2,12 @@ import argparse
 import json
 import os
 import shutil
-import subprocess
-import tempfile
 from typing import List, Optional
 
 import nltk
 import pydantic
 import uvicorn
 from fastapi import Body, FastAPI, File, Form, Query, UploadFile, WebSocket
-from fastapi.openapi.utils import get_openapi
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing_extensions import Annotated
@@ -88,6 +85,7 @@ def get_vs_path(local_doc_id: str):
 def get_file_path(local_doc_id: str, doc_name: str):
     return os.path.join(UPLOAD_ROOT_PATH, local_doc_id, doc_name)
 
+
 async def upload_file(
         file: UploadFile = File(description="A single binary file"),
         knowledge_base_id: str = Form(..., description="Knowledge Base Name", example="kb1"),
@@ -114,6 +112,7 @@ async def upload_file(
     else:
         file_status = "文件上传失败，请重新上传"
         return BaseResponse(code=500, msg=file_status)
+
 
 async def upload_files(
         files: Annotated[
@@ -144,7 +143,7 @@ async def upload_files(
 
 
 async def list_docs(
-        knowledge_base_id: Optional[str] = Query(description="Knowledge Base Name", example="kb1")
+        knowledge_base_id: Optional[str] = Query(default=None, description="Knowledge Base Name", example="kb1")
 ):
     if knowledge_base_id:
         local_doc_folder = get_folder_path(knowledge_base_id)
@@ -184,7 +183,7 @@ async def delete_docs(
         if os.path.exists(doc_path):
             os.remove(doc_path)
         else:
-            return {"code": 1, "msg": f"document {doc_name} not found"}
+            BaseResponse(code=1, msg=f"document {doc_name} not found")
 
         remain_docs = await list_docs(knowledge_base_id)
         if remain_docs["code"] != 0 or len(remain_docs["data"]) == 0:
@@ -214,24 +213,30 @@ async def local_doc_chat(
 ):
     vs_path = os.path.join(VS_ROOT_PATH, knowledge_base_id)
     if not os.path.exists(vs_path):
-        raise ValueError(f"Knowledge base {knowledge_base_id} not found")
+        # return BaseResponse(code=1, msg=f"Knowledge base {knowledge_base_id} not found")
+        return ChatMessage(
+            question=question,
+            response=f"Knowledge base {knowledge_base_id} not found",
+            history=history,
+            source_documents=[],
+        )
+    else:
+        for resp, history in local_doc_qa.get_knowledge_based_answer(
+                query=question, vs_path=vs_path, chat_history=history, streaming=True
+        ):
+            pass
+        source_documents = [
+            f"""出处 [{inum + 1}] {os.path.split(doc.metadata['source'])[-1]}：\n\n{doc.page_content}\n\n"""
+            f"""相关度：{doc.metadata['score']}\n\n"""
+            for inum, doc in enumerate(resp["source_documents"])
+        ]
 
-    for resp, history in local_doc_qa.get_knowledge_based_answer(
-            query=question, vs_path=vs_path, chat_history=history, streaming=True
-    ):
-        pass
-    source_documents = [
-        f"""出处 [{inum + 1}] {os.path.split(doc.metadata['source'])[-1]}：\n\n{doc.page_content}\n\n"""
-        f"""相关度：{doc.metadata['score']}\n\n"""
-        for inum, doc in enumerate(resp["source_documents"])
-    ]
-
-    return ChatMessage(
-        question=question,
-        response=resp["result"],
-        history=history,
-        source_documents=source_documents,
-    )
+        return ChatMessage(
+            question=question,
+            response=resp["result"],
+            history=history,
+            source_documents=source_documents,
+        )
 
 
 async def chat(
@@ -262,17 +267,17 @@ async def chat(
 
 async def stream_chat(websocket: WebSocket, knowledge_base_id: str):
     await websocket.accept()
-    vs_path = os.path.join(VS_ROOT_PATH, knowledge_base_id)
-
-    if not os.path.exists(vs_path):
-        await websocket.send_json({"error": f"Knowledge base {knowledge_base_id} not found"})
-        await websocket.close()
-        return
-
-    history = []
     turn = 1
     while True:
-        question = await websocket.receive_text()
+        input_json = await websocket.receive_json()
+        question, history, knowledge_base_id = input_json[""], input_json["history"], input_json["knowledge_base_id"]
+        vs_path = os.path.join(VS_ROOT_PATH, knowledge_base_id)
+
+        if not os.path.exists(vs_path):
+            await websocket.send_json({"error": f"Knowledge base {knowledge_base_id} not found"})
+            await websocket.close()
+            return
+
         await websocket.send_json({"question": question, "turn": turn, "flag": "start"})
 
         last_print_len = 0
@@ -301,18 +306,13 @@ async def stream_chat(websocket: WebSocket, knowledge_base_id: str):
         )
         turn += 1
 
-
 async def document():
     return RedirectResponse(url="/docs")
 
 
-def main():
+def api_start(host, port):
     global app
     global local_doc_qa
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--host", type=str, default="0.0.0.0")
-    parser.add_argument("--port", type=int, default=7861)
-    args = parser.parse_args()
 
     app = FastAPI()
     # Add CORS middleware to allow all origins
@@ -338,7 +338,6 @@ def main():
     app.get("/local_doc_qa/list_files", response_model=ListDocsResponse)(list_docs)
     app.delete("/local_doc_qa/delete_file", response_model=BaseResponse)(delete_docs)
 
-
     local_doc_qa = LocalDocQA()
     local_doc_qa.init_cfg(
         llm_model=LLM_MODEL,
@@ -347,8 +346,12 @@ def main():
         llm_history_len=LLM_HISTORY_LEN,
         top_k=VECTOR_SEARCH_TOP_K,
     )
-    uvicorn.run(app, host=args.host, port=args.port)
+    uvicorn.run(app, host=host, port=port)
 
 
 if __name__ == "__main__":
-    main()
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--host", type=str, default="0.0.0.0")
+    parser.add_argument("--port", type=int, default=7861)
+    args = parser.parse_args()
+    api_start(args.host, args.port)
